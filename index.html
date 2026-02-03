@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pixel Valentine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#ffd6e7;
+      --ink:#2b1b2a;
+      --paper:#fff7fb;
+      --shadow:rgba(43,27,42,.22);
+      --pixel: 6px;
+      --boxSize: min(520px, 90vw);
+      --noteW: min(420px, 88vw);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Press Start 2P", system-ui, sans-serif;
+      overflow-x:hidden;
+      position: relative;
+    }
+     body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image: url("assets/background.png");
+      background-size: min(900px, 80vw) auto;
+      background-position: center;
+      opacity: 0.5;
+      pointer-events:none;
+      z-index:0;
+    }
+    .grain{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.10;
+      background-image: radial-gradient(rgba(0,0,0,.25) 1px, transparent 1px);
+      background-size: 10px 10px;
+      transform: translateY(var(--grainShift, 0px));
+      mix-blend-mode:multiply;
+       z-index: 1;
+    }
+    .wrap{
+       min-height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 0;
+      position: relative;
+      z-index: 2;
+    }
+    .scene{
+      position:relative;
+      width:100vw;
+      height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow: visible;
+      background: transparent;
+    }
+    .veil{
+      position:absolute; inset:0;
+      background: rgba(30,15,28,.92);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .35s steps(6);
+      z-index: 20;
+    }
+    .nope .veil{ opacity:1; }
+
+    .hearts{ position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:30; }
+    .heart{
+      position:absolute;
+      width: 22px;
+      height: 22px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='none'/><rect x='1' y='0' width='6' height='6' fill='%23241a1e'/><rect x='9' y='0' width='6' height='6' fill='%23241a1e'/><rect x='0' y='2' width='16' height='6' fill='%23241a1e'/><rect x='1' y='5' width='14' height='6' fill='%23241a1e'/><rect x='2' y='8' width='12' height='4' fill='%23241a1e'/><rect x='4' y='12' width='8' height='2' fill='%23241a1e'/><rect x='6' y='14' width='4' height='1' fill='%23241a1e'/><rect x='2' y='1' width='4' height='4' fill='%23ff4b6e'/><rect x='10' y='1' width='4' height='4' fill='%23ff4b6e'/><rect x='1' y='3' width='14' height='4' fill='%23ff4b6e'/><rect x='2' y='6' width='12' height='4' fill='%23ff4b6e'/><rect x='3' y='9' width='10' height='3' fill='%23ff4b6e'/><rect x='5' y='12' width='6' height='2' fill='%23ff4b6e'/><rect x='7' y='14' width='2' height='1' fill='%23ff4b6e'/></svg>");
+      background-size: contain;
+      background-repeat: no-repeat;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 10px 0 var(--shadow));
+      animation: floatUp 1300ms steps(20) forwards;
+      will-change: transform, opacity;
+    }
+    @keyframes floatUp{
+      from{ transform: translateY(0) translateX(0) rotate(0deg) scale(var(--scale, 1)); opacity:1; }
+      to{ transform: translateY(-320px) translateX(var(--dx,0px)) rotate(var(--rot,0deg)) scale(var(--scale, 1)); opacity:0; }
+    }
+
+    /* GIFT */
+    .gift{
+      position:relative;
+      width: var(--boxSize);
+      height: var(--boxSize);
+      cursor:pointer;
+      transform: translateY(0);
+      animation: giftFloat 2600ms ease-in-out infinite;
+      filter: drop-shadow(0 18px 0 var(--shadow));
+      user-select:none;
+      z-index:10;
+    }
+
+    .giftLayer{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+      user-select:none;
+      image-rendering: pixelated;
+    }
+
+    .giftBottom{
+      z-index:1;
+      opacity:0;
+      clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
+      transition: opacity .2s steps(4);
+    }
+    .giftTop{
+      z-index:2;
+      opacity:0;
+      clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+      transform-origin: 50% 85%;
+      transition: opacity .2s steps(4);
+      filter: brightness(1.02);
+    }
+    .giftFull{
+      z-index:3;
+      opacity:1;
+      transition: opacity .2s steps(4);
+    }
+    .giftBow{
+      z-index:4;
+      opacity:0;
+    }
+
+    /* NOTE */
+    .noteSlot{
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--noteW);
+      max-width: 520px;
+      height: var(--noteW);
+      aspect-ratio: 1 / 1;
+      transform: translate(-50%, -70px) scale(0.4);
+      overflow:hidden;
+      z-index: 0;
+      opacity:0;
+      pointer-events:none;
+    }
+    .noteImg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      pointer-events:none;
+    }
+    .note{
+      position:absolute;
+      inset: 0;
+      padding: 64px 40px 32px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      pointer-events:none;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 14px;
+      text-align:center;
+      font-size: 15px;
+      line-height: 1.8;
+      user-select:none;
+    }
+    .noteSlot.front{
+      overflow: visible;
+      z-index: 40;
+    }
+    .choices{
+      display:flex;
+      gap: 14px;
+      justify-content:center;
+      margin-top: 16px;
+      position: relative;
+      min-height: 38px;
+    }
+    .doodle{
+      width: 32px;
+      height: 32px;
+      display:none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='none'/><rect x='1' y='0' width='6' height='6' fill='%23000000'/><rect x='9' y='0' width='6' height='6' fill='%23000000'/><rect x='0' y='2' width='16' height='6' fill='%23000000'/><rect x='1' y='5' width='14' height='6' fill='%23000000'/><rect x='2' y='8' width='12' height='4' fill='%23000000'/><rect x='4' y='12' width='8' height='2' fill='%23000000'/><rect x='6' y='14' width='4' height='1' fill='%23000000'/><rect x='2' y='1' width='4' height='4' fill='none'/><rect x='10' y='1' width='4' height='4' fill='none'/><rect x='1' y='3' width='14' height='4' fill='none'/><rect x='2' y='6' width='12' height='4' fill='none'/><rect x='3' y='9' width='10' height='3' fill='none'/><rect x='5' y='12' width='6' height='2' fill='none'/><rect x='7' y='14' width='2' height='1' fill='none'/></svg>");
+      background-size: contain;
+      background-repeat: no-repeat;
+      image-rendering: pixelated;
+      opacity: 0.9;
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events:none;
+    }
+    #noteText{
+      white-space: normal;
+      display:block;
+      overflow:hidden;
+      max-width: 70%;
+    }
+    #noteText.nowrap{
+      white-space: nowrap;
+      display:inline-block;
+      max-width: none;
+    }
+    .btn{
+      font-family: inherit;
+      font-size: 15px;
+      padding: 12px 20px;
+      border: calc(var(--pixel) * .7) solid rgba(0,0,0,.22);
+      background: #fff;
+      cursor:pointer;
+      transition: none;
+    }
+     .btn:hover{ transform: none; filter: none; }
+    .btn:active{ transform: none; }
+    .btn.yes{ background:#e7fff0; }
+    .btn.no{ background:#fff0f0; }
+    .no-escape .btn.no{
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 60;
+    }
+
+    /* STATES */
+    .opened .noteSlot{
+      opacity:1;
+      pointer-events:auto;
+      animation: noteRise 1100ms steps(22) forwards;
+    }
+    .opened .note{
+      pointer-events:auto;
+    }
+    .opened #noteText{
+     animation: typeLine 1600ms steps(var(--type-steps, 28)) 900ms forwards;
+    }
+
+    /* staged open sequence (pixel-ish via steps) */
+    .opening .giftFull{
+      opacity:0;
+    }
+    .opening .giftBottom,
+    .opening .giftTop{
+      opacity:1;
+    }
+    .opening .gift,
+    .opened .gift,
+    .closing-note .gift,
+    .closing-box .gift{
+      animation: none;
+    }
+    .opening .giftTop{
+      animation: lidLiftPhoto 900ms steps(18) 200ms forwards;
+    }
+    .opening .giftBow{
+      opacity:1;
+      animation: bowPopPhoto 620ms steps(12) forwards;
+    }
+    /* after the sequence finishes */
+    .opened .giftFull{ opacity:0; }
+    .opened .giftBottom,
+    .opened .giftTop{ opacity:1; }
+    .opened .giftBow{ opacity:0; }
+    .opened .giftTop{ transform: translate(-18%, -14%) rotate(-12deg); filter: brightness(1.02); }
+
+    @keyframes bowPopPhoto{
+      0%{ transform: translate(0,0) rotate(0deg) scale(1); opacity:0; }
+      20%{ opacity:1; }
+      100%{ transform: translate(12%, 22%) rotate(16deg) scale(0.88); opacity:0; }
+    }
+    @keyframes lidLiftPhoto{
+      0%{ transform: translate(0,0) rotate(0deg); }
+      35%{ transform: translate(0, -10%) rotate(-10deg); }
+      100%{ transform: translate(-18%, -14%) rotate(-12deg); }
+    }
+    @keyframes noteRise{
+      0%{ transform: translate(-50%, -70px) scale(0.4); opacity:1; }
+      30%{ transform: translate(-50%, -180px) scale(0.5); opacity:1; }
+      50%{ transform: translate(-50%, -230px) scale(0.6); opacity:1; }
+      75%{ transform: translate(-50%, -215px) scale(0.8); opacity:1; }
+      100%{ transform: translate(-50%, -200px) scale(1); opacity:1; }
+    }
+    @keyframes giftFloat{
+      0%{ transform: translateY(100px); }
+      50%{ transform: translateY(88px); }
+      100%{ transform: translateY(100px); }
+    }
+    @keyframes typeLine{
+      from{ width: 10; }
+      to{ width: calc(var(--type-ch, 28) * 2ch); }
+    }
+
+    .accepted .note{ opacity:1; transform: none; pointer-events:none; }
+    .accepted .gift{ cursor: default; }
+    .accepted .choices .btn{ visibility:hidden; pointer-events:none; }
+    .accepted .choices .doodle{ display:block; }
+    .closing-note .choices .btn,
+    .closing-box .choices .btn{ visibility:hidden; pointer-events:none; }
+    .closing-note .choices .doodle,
+    .closing-box .choices .doodle{ display:block; }
+
+    .nope .note{ opacity:0; transform: translate(-50%, 40px); pointer-events:none; }
+
+    @media (max-width: 420px){
+      :root{ --pixel:5px; --boxSize: min(460px, 92vw); }
+      .note{ font-size: 15px; padding: 52px 30px 26px; }
+      #noteText{ max-width: 78%; }
+      .heart{ width: 18px; height: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="scene" id="scene">
+      <div class="veil" aria-hidden="true"></div>
+      <div class="hearts" id="hearts"></div>
+
+      <div class="gift" id="gift" role="button" aria-label="Open gift">
+        <img class="giftLayer giftFull" id="giftFull" src="assets/heart with.png" alt="" aria-hidden="true" />
+        <img class="giftLayer giftBottom" id="giftBottom" src="assets/heart.png" alt="" aria-hidden="true" />
+        <img class="giftLayer giftTop" id="giftTop" src="assets/heart.png" alt="" aria-hidden="true" />
+        <img class="giftLayer giftBow" id="giftBowImg" src="assets/bant.png" alt="" aria-hidden="true" />
+
+        <div class="noteSlot" id="noteSlot">
+          <img class="noteImg" src="assets/note.png?v=4" alt="" aria-hidden="true" />
+          <div class="note" id="note">
+            <div id="noteText">Will you be my valentine?</div>
+            <div class="choices">
+              <button class="btn yes" id="yesBtn" type="button">YES</button>
+              <button class="btn no" id="noBtn" type="button">NO</button>
+              <div class="doodle" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    const gift  = document.getElementById('gift');
+    const hearts = document.getElementById('hearts');
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn  = document.getElementById('noBtn');
+    const noteSlot = document.getElementById('noteSlot');
+    const note = document.getElementById('note');
+    const noteText = document.getElementById('noteText');
+
+    function resetTyping(text){
+      const len = text.length || 1;
+      noteText.style.setProperty('--type-ch', len);
+      noteText.style.setProperty('--type-steps', len);
+      noteText.style.width = '10ch';
+      noteText.style.animation = 'none';
+      void noteText.offsetHeight;
+      noteText.style.animation = `typeLine 3000ms steps(${len}) forwards`;
+    }
+
+    let accepted = false;
+
+    gift.addEventListener('click', () => {
+      if(accepted) return;
+      if(scene.classList.contains('opening') || scene.classList.contains('opened')) return;
+
+      noteSlot.classList.remove('front');
+      noteText.textContent = 'Will you be my valentine?';
+      noteText.classList.remove('nowrap');
+      scene.classList.remove('nope');
+      scene.classList.add('opening');
+
+      setTimeout(() => {
+        scene.classList.remove('opening');
+        scene.classList.add('opened');
+        setTimeout(() => resetTyping(noteText.textContent), 400);
+        setTimeout(() => noteSlot.classList.add('front'), 680);
+      }, 900);
+    });
+
+    yesBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(!scene.classList.contains('opened') || accepted) return;
+      accepted = true;
+      scene.classList.add('accepted');
+      noteText.textContent = 'Yyaay!! love u!!';
+      noteText.classList.add('nowrap');
+      resetTyping(noteText.textContent);
+      burstHearts(90);
+      setTimeout(() => burstHearts(90), 160);
+      setTimeout(() => burstHearts(90), 320);
+      setTimeout(() => startClosing(), 5000);
+    });
+
+    noBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if(!scene.classList.contains('opened') || accepted) return;
+      scene.classList.add('no-escape');
+      moveNoButton();
+    });
+
+    function moveNoButton(){
+     
+      const x = Math.random() * 60 - 30;
+      const y = Math.random() * 60 - 30;
+
+      noBtn.style.left = x + 'vw';
+      noBtn.style.top = y + 'vh';
+
+      noBtn.style.transform = 'none';
+    }
+
+    noBtn.addEventListener('mouseenter', (e) => {
+      e.stopPropagation();
+      if(!scene.classList.contains('opened') || accepted) return;
+      if(!scene.classList.contains('no-escape')) return;
+      moveNoButton();
+    });
+
+    function burstHearts(count){
+      const rect = scene.getBoundingClientRect();
+      for(let i=0;i<count;i++){
+        const h = document.createElement('div');
+        h.className = 'heart';
+        const x = Math.random() * rect.width;
+        const y = Math.random() * rect.height;
+        h.style.left = x + 'px';
+        h.style.top  = y + 'px';
+        h.style.setProperty('--dx', (Math.random()*200 - 100) + 'px');
+        h.style.setProperty('--rot', (Math.random()*40 - 20) + 'deg');
+        h.style.setProperty('--scale', (0.8 + Math.random() * 0.9).toFixed(2));
+        hearts.appendChild(h);
+        h.addEventListener('animationend', () => h.remove());
+      }
+    }
+
+    function startClosing(){
+      if(!scene.classList.contains('opened') || scene.classList.contains('closing-note')) return;
+      scene.classList.add('closing-note');
+
+      const noteDuration = 1100;
+      const boxDuration = 1100;
+      setTimeout(() => {
+        scene.classList.add('closing-box');
+      }, noteDuration);
+      setTimeout(() => {
+        scene.classList.remove('opened', 'closing-note', 'closing-box', 'no-escape', 'accepted');
+        noteSlot.classList.remove('front');
+        accepted = false;
+        noteText.textContent = 'Will you be my valentine?';
+        noteText.classList.remove('nowrap');
+        noteText.style.animation = 'none';
+        noteText.style.width = '0';
+      }, noteDuration + boxDuration);
+    }
+
+    window.addEventListener('scroll', () => {
+      const s = window.scrollY || 0;
+      document.documentElement.style.setProperty('--grainShift', (s * 0.05) + 'px');
+      scene.style.transform = `translateY(${Math.sin(s/200)*2}px)`;
+    }, {passive:true});
+  </script>
+</body>
+</html>
